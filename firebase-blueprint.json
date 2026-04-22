@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "Workspace": {
+      "title": "Workspace",
+      "description": "The main data container for the ADCI Unit Planner, including student profiles and timetable.",
+      "type": "object",
+      "properties": {
+        "rawStudents": {
+          "type": "array",
+          "description": "List of all student profiles"
+        },
+        "offeredUnits": {
+          "type": "array",
+          "description": "List of unit codes offered in the current session"
+        },
+        "timetable": {
+          "type": "object",
+          "description": "The current timetable configuration"
+        },
+        "exportedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last export/save"
+        },
+        "version": {
+          "type": "string",
+          "description": "Data schema version"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "User ID of the last person to update"
+        }
+      },
+      "required": ["rawStudents", "offeredUnits", "timetable"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile and role information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "viewer"] }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Storage for different planning workspaces"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User accounts and permissions"
+    }
+  }
+}
