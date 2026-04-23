@@ -390,7 +390,7 @@ function App() {
           <div className="flex justify-center mb-4">
             <Shield className="w-16 h-16 text-primary" />
           </div>
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">ADCI Unit Planner</h1>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">ADCI Unit Planner v2.1</h1>
           <p className="text-lg text-slate-500">Intelligent Progression Tracking & Study Planning</p>
         </div>
         
