@@ -121,6 +121,13 @@ const canTakeUnit = (
     }
   }
 
+  // SPECIAL CASE: CAP302 MUST have CAP301 completed first (Sequential Requirement)
+  // This bypasses the 77 CP "OR" rule to ensure they don't go together
+  if (unitCode === 'CAP302') {
+    if (!doneSet.has('CAP301')) return false;
+    return true;
+  }
+
   // Year 3 Logic: Prereqs OR 77 Credit Points
   if (YEAR_3_UNITS.has(unitCode)) {
     const currentCP = doneSet.size * 6;

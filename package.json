@@ -2,7 +2,7 @@
   "name": "adci-planner",
   "version": "1.0.0",
   "type": "module",
-  "description": "ADCI Unit Planner",
+  "description": "ADCI Unit Planner 2.1",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

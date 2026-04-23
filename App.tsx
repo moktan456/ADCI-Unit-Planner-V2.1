@@ -390,7 +390,7 @@ function App() {
           <div className="flex justify-center mb-4">
             <Shield className="w-16 h-16 text-primary" />
           </div>
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">ADCI Unit Planner v2.1</h1>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">ADCI Unit Planner 2.1</h1>
           <p className="text-lg text-slate-500">Intelligent Progression Tracking & Study Planning</p>
         </div>
         
@@ -421,7 +421,7 @@ function App() {
     <div className="min-h-screen bg-slate-50 flex overflow-hidden font-sans text-slate-900">
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20">
         <div className="p-6 border-b border-slate-100">
-          <div className="mb-6 flex items-center gap-2"><Shield className="w-6 h-6 text-primary" /><span className="font-extrabold text-xl tracking-tight text-primary leading-tight">ADCI Unit Planner v2.1</span></div>
+          <div className="mb-6 flex items-center gap-2"><Shield className="w-6 h-6 text-primary" /><span className="font-extrabold text-xl tracking-tight text-primary leading-tight">ADCI Unit Planner 2.1</span></div>
           <div className="bg-slate-100 p-1 rounded-lg flex text-xs font-semibold">
             {['Combined', 'Cyber', 'Data'].map((filter) => (
                <button key={filter} onClick={() => handleStreamFilterChange(filter as StreamFilter)} className={clsx("flex-1 py-1.5 rounded-md transition-all", streamFilter === filter ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700")}>{filter === 'Combined' ? 'All' : filter}</button>

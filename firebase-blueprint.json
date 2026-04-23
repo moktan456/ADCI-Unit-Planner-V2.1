@@ -2,7 +2,7 @@
   "entities": {
     "Workspace": {
       "title": "Workspace",
-      "description": "The main data container for the ADCI Unit Planner, including student profiles and timetable.",
+      "description": "The main data container for the ADCI Unit Planner 2.1, including student profiles and timetable.",
       "type": "object",
       "properties": {
         "rawStudents": {
