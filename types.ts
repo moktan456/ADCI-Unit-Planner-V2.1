@@ -1,3 +1,10 @@
+export interface User {
+  uid: string;
+  email: string;
+  displayName: string;
+  emailVerified: boolean;
+}
+
 export interface RawStudentRow {
   Studentid: string;
   "Student Name": string;

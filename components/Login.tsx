@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Shield, Lock, User, ArrowRight, AlertCircle, Chrome } from 'lucide-react';
+import { Shield, Lock, User, ArrowRight, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
-import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from '../firebase';
 
 interface LoginProps {
   onLogin: (u: string, p: string) => Promise<boolean>;
@@ -13,19 +12,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleGoogleLogin = async () => {
-    setError('');
-    setIsSubmitting(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
-      console.error("Google Login Error:", err);
-      setError('Google Sign-In failed. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -35,21 +21,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     await new Promise(resolve => setTimeout(resolve, 600));
 
     try {
-      // Hardcoded Admin Check
-      if (username === 'admin' && password === 'admin123') {
-        const success = await onLogin(username, password);
-        // Even if onLogin returns false (due to its current implementation in App.tsx), 
-        // we'll consider it a success for the hardcoded path by bypassing or forcing it.
-        // Better: Update App.tsx too.
-        return;
-      }
-
       const success = await onLogin(username, password);
       if (!success) {
         setError('Invalid credentials. Please try again.');
       }
-    } catch (err) {
-      setError('An error occurred during login.');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during login.');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,25 +41,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <Shield className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">ADCI Unit Planner 2.1</h1>
-            <p className="text-slate-400 text-sm mt-1">Staff Administration Portal</p>
+            <p className="text-slate-400 text-sm mt-1">Authorized Access Only</p>
           </div>
         </div>
         <div className="p-8">
-          <div className="mb-6 space-y-3">
-            <button 
-              onClick={handleGoogleLogin}
-              disabled={isSubmitting}
-              className="w-full py-3 px-4 bg-white border border-slate-200 rounded-xl text-slate-700 font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
-            >
-              <Chrome className="w-5 h-5 text-red-500" />
-              Sign in with Google
-            </button>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-              <div className="relative flex justify-center text-xs uppercase font-bold text-slate-400"><span className="bg-white px-2">Or admin access</span></div>
-            </div>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2 animate-slide-up">
@@ -126,11 +88,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 isSubmitting ? "bg-slate-400 cursor-wait" : "bg-primary hover:bg-indigo-700"
               )}
             >
-              {isSubmitting ? "Verifying..." : <>Sign In Access <ArrowRight className="w-4 h-4" /></>}
+              {isSubmitting ? "Verifying..." : <>Sign In <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
           <div className="mt-8 text-center">
-            <p className="text-xs text-slate-400">Restricted Access. Authorized Personnel Only.<br/>© {new Date().getFullYear()} ADCI</p>
+            <p className="text-xs text-slate-400">© {new Date().getFullYear()} ADCI - Staff Use Only</p>
           </div>
         </div>
       </div>

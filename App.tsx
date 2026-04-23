@@ -16,7 +16,8 @@ import { apiService } from './services/api';
 import { ProcessedData, StudentProfile, WorkspaceState, PrerequisiteRule } from './types';
 import { OFFERED_UNITS as DEFAULT_OFFERED_UNITS } from './constants';
 import { clsx } from 'clsx';
-import { auth, db, onAuthStateChanged, signOut, User } from './firebase';
+import { db } from './firebase';
+import type { User } from './types'; // Assuming we use a local User type now or just any
 
 type StreamFilter = 'Combined' | 'Cyber' | 'Data';
 
@@ -142,63 +143,41 @@ function App() {
       }
   };
 
+  // Handle login via hardcoded credentials
   const handleLogin = async (u: string, p: string): Promise<boolean> => {
     if (u === 'admin' && p === 'admin123') {
-      try {
-        await signInWithEmailAndPassword(auth, 'admin@adci.edu', 'admin123');
-        showToast("Logged in as Admin", "success");
-        return true;
-      } catch (err: any) {
-        console.error("Admin Login Error:", err);
-        // Fallback or specific error handling matches
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-           throw new Error("Admin account credentials mismatch or not yet configured in Firebase console.");
-        }
-        throw err;
-      }
+      const mockUser = {
+        uid: 'admin-hardcoded',
+        email: 'admin@adci.edu',
+        displayName: 'ADCI Admin',
+        emailVerified: true
+      } as any;
+      
+      setUser(mockUser);
+      // Persist locally since we removed Firebase Auth
+      localStorage.setItem('adci_auth_session', JSON.stringify(mockUser));
+      showToast("Logged in as Admin", "success");
+      return true;
     }
     return false;
   };
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setUser(null); // Explicitly clear in case of mock user
-      setData(null);
-      setRawStudents(null);
-    } catch (error) {
-      showToast("Logout failed", "error");
-    }
+    localStorage.removeItem('adci_auth_session');
+    setUser(null);
+    setData(null);
+    setRawStudents(null);
+    showToast("Logged out", "info");
   };
 
-  // Auth Listener
+  // Auth Listener (Simplified for local session)
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setIsAuthReady(true);
-      
-      if (currentUser) {
-        // Sync user profile to Firestore
-        try {
-          const { doc, setDoc, getDoc } = await import('firebase/firestore');
-          const userRef = doc(db, 'users', currentUser.uid);
-          const userSnap = await getDoc(userRef);
-          
-          if (!userSnap.exists()) {
-             await setDoc(userRef, {
-               uid: currentUser.uid,
-               email: currentUser.email,
-               role: 'viewer', // Default role for new users
-               createdAt: new Date().toISOString()
-             });
-          }
-        } catch (e) {
-          console.error("Profile sync error:", e);
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, [user]);
+    const savedSession = localStorage.getItem('adci_auth_session');
+    if (savedSession) {
+      setUser(JSON.parse(savedSession));
+    }
+    setIsAuthReady(true);
+  }, []);
 
   // Initial Load
   useEffect(() => {

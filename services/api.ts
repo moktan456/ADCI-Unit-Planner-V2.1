@@ -1,6 +1,6 @@
 
 import { WorkspaceState } from '../types';
-import { db, auth } from '../firebase';
+import { db } from '../firebase';
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const WORKSPACE_DOC_ID = 'default'; // Using a default workspace for now
@@ -39,7 +39,7 @@ export const apiService = {
       
       await setDoc(docRef, {
         ...data,
-        updatedBy: auth.currentUser?.uid || 'anonymous',
+        updatedBy: 'admin',
         updatedAt: new Date().toISOString()
       }, { merge: true });
       
