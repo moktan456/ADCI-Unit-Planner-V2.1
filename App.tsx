@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { LayoutDashboard, Users, BookOpen, Settings, CalendarRange, SlidersHorizontal, FileText, Shield, X, CheckCircle, Info, LogOut, Save, DownloadCloud, AlertTriangle, Upload, Loader2, ListChecks } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Settings, CalendarRange, SlidersHorizontal, FileText, Shield, X, CheckCircle, Info, LogOut, Save, DownloadCloud, AlertTriangle, Upload, Loader2, ListChecks, Plus } from 'lucide-react';
 import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import StudentTracker from './components/StudentTracker';
@@ -144,26 +144,18 @@ function App() {
 
   const handleLogin = async (u: string, p: string): Promise<boolean> => {
     if (u === 'admin' && p === 'admin123') {
-      const mockUser = {
-        uid: 'admin-id',
-        email: 'admin@adci.edu',
-        displayName: 'ADCI Admin',
-        emailVerified: true,
-        isAnonymous: false,
-        providerData: [],
-        metadata: {},
-        refreshToken: '',
-        tenantId: null,
-        delete: async () => {},
-        getIdToken: async () => '',
-        getIdTokenResult: async () => ({} as any),
-        reload: async () => {},
-        toJSON: () => ({})
-      } as unknown as User;
-      
-      setUser(mockUser);
-      showToast("Logged in as Admin", "success");
-      return true;
+      try {
+        await signInWithEmailAndPassword(auth, 'admin@adci.edu', 'admin123');
+        showToast("Logged in as Admin", "success");
+        return true;
+      } catch (err: any) {
+        console.error("Admin Login Error:", err);
+        // Fallback or specific error handling matches
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+           throw new Error("Admin account credentials mismatch or not yet configured in Firebase console.");
+        }
+        throw err;
+      }
     }
     return false;
   };
@@ -182,9 +174,6 @@ function App() {
   // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      // Don't overwrite if we have a hardcoded admin session
-      if (user?.uid === 'admin-id' && !currentUser) return;
-      
       setUser(currentUser);
       setIsAuthReady(true);
       
@@ -394,9 +383,68 @@ function App() {
           <p className="text-lg text-slate-500">Intelligent Progression Tracking & Study Planning</p>
         </div>
         
-        {/* Empty State / Upload options */}
-        <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl p-8 border border-white/50 backdrop-blur-sm relative overflow-hidden flex flex-col items-center">
-           <FileUpload onFileProcess={handleFileProcess} isProcessing={isLoading} />
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
+           {/* Step 1: Prerequisites */}
+           <div className="bg-white rounded-3xl shadow-xl p-8 border border-white/50 backdrop-blur-sm flex flex-col items-center relative overflow-hidden group">
+              <div className="absolute top-4 right-4 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">Step 1</div>
+              <div className="w-12 h-12 bg-indigo-50 text-primary rounded-2xl flex items-center justify-center mb-6 ring-4 ring-indigo-50/50">
+                 <ListChecks className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Upload Rules</h2>
+              <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+                Upload your prerequisite rules (Excel/CSV) first to ensure recommendations are in track.
+              </p>
+              
+              <div className="w-full space-y-3">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-2xl hover:border-primary hover:bg-slate-50 transition-all cursor-pointer group-hover:bg-slate-50">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Plus className="w-8 h-8 text-slate-400 mb-2" />
+                    <p className="text-sm text-slate-500 font-medium">
+                      {prerequisiteRules.length > 0 ? `${prerequisiteRules.length} Rules Loaded` : 'Prerequisite File'}
+                    </p>
+                  </div>
+                  <input type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={handlePrerequisiteProcess} />
+                </label>
+                
+                <button 
+                  onClick={downloadPrerequisiteTemplate}
+                  className="w-full py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <DownloadCloud className="w-4 h-4" /> Download Template
+                </button>
+              </div>
+              
+              {prerequisiteRules.length > 0 && (
+                <div className="mt-4 flex items-center gap-2 text-emerald-600 text-sm font-bold animate-fade-in">
+                  <CheckCircle className="w-4 h-4" /> Rules successfully tracked
+                </div>
+              )}
+           </div>
+
+           {/* Step 2: Student Reports */}
+           <div className={clsx(
+             "bg-white rounded-3xl shadow-xl p-8 border backdrop-blur-sm flex flex-col items-center relative overflow-hidden transition-all",
+             prerequisiteRules.length === 0 ? "opacity-90 grayscale-[0.5] border-white/50" : "border-emerald-100 shadow-emerald-500/5 ring-4 ring-emerald-500/5"
+           )}>
+              <div className="absolute top-4 right-4 bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-xs font-bold">Step 2</div>
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 ring-4 ring-emerald-50/50">
+                 <Upload className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Student Reports</h2>
+              <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+                Once rules are set, upload your student report data to generate study plans.
+              </p>
+              
+              <div className="w-full">
+                <FileUpload onFileProcess={handleFileProcess} isProcessing={isLoading} />
+              </div>
+              
+              {prerequisiteRules.length === 0 && (
+                <div className="mt-4 text-[10px] text-amber-600 font-bold bg-amber-50 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                   <AlertTriangle className="w-3 h-3" /> Recommended: Upload rules first
+                </div>
+              )}
+           </div>
         </div>
 
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">

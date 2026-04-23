@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Lock, User, ArrowRight, AlertCircle, Chrome } from 'lucide-react';
 import { clsx } from 'clsx';
-import { auth, googleProvider, signInWithPopup } from '../firebase';
+import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from '../firebase';
 
 interface LoginProps {
   onLogin: (u: string, p: string) => Promise<boolean>;
