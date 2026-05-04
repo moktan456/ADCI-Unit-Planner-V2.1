@@ -40,7 +40,7 @@ function App() {
   const [streamFilter, setStreamFilter] = useState<StreamFilter>('Combined');
   const [isLoading, setIsLoading] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'tracker' | 'plans' | 'demand' | 'timetable' | 'offerings' | 'failures'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'tracker' | 'plans' | 'demand' | 'demand2' | 'timetable' | 'offerings' | 'failures'>('dashboard');
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -461,6 +461,7 @@ function App() {
           <NavItem id="failures" icon={AlertTriangle} label="Failure Analysis" />
           <NavItem id="plans" icon={FileText} label="Study Plans" />
           <NavItem id="demand" icon={BookOpen} label="Unit Demand" />
+          <NavItem id="demand2" icon={ListChecks} label="Unit Demand 2" />
           <NavItem id="timetable" icon={CalendarRange} label="Timetable" />
           <div className="pt-4 pb-2"><div className="h-px bg-slate-100 mx-2"></div></div>
           <NavItem id="offerings" icon={SlidersHorizontal} label="Offerings" />
@@ -504,7 +505,7 @@ function App() {
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 z-10 shrink-0">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-slate-800 capitalize">
-              {activeTab === 'dashboard' ? 'Executive Dashboard' : activeTab === 'tracker' ? 'Student Progression' : activeTab === 'plans' ? 'Projected Study Plans' : activeTab === 'demand' ? 'Unit Offerings' : activeTab === 'timetable' ? 'Smart Timetable' : activeTab === 'failures' ? 'Failure Analysis' : 'Configuration'}
+              {activeTab === 'dashboard' ? 'Executive Dashboard' : activeTab === 'tracker' ? 'Student Progression' : activeTab === 'plans' ? 'Projected Study Plans' : activeTab === 'demand' ? 'Unit Offerings' : activeTab === 'demand2' ? 'Future Unit Demand (Sem 2)' : activeTab === 'timetable' ? 'Smart Timetable' : activeTab === 'failures' ? 'Failure Analysis' : 'Configuration'}
             </h1>
             <span className={clsx("px-2 py-0.5 rounded text-xs font-bold border", streamFilter === 'Cyber' ? "bg-indigo-50 text-indigo-700 border-indigo-200" : streamFilter === 'Data' ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-600 border-slate-200")}>{streamFilter} View</span>
           </div>
@@ -518,6 +519,7 @@ function App() {
           {activeTab === 'failures' && <FailureAnalysis data={data} onSelectStudent={setSelectedStudent} />}
           {activeTab === 'plans' && <StudyPlanList data={data} />}
           {activeTab === 'demand' && <UnitDemandList data={data} />}
+          {activeTab === 'demand2' && <UnitDemandList data={data} isFuture={true} />}
           {activeTab === 'timetable' && <TimetableScheduler data={data} showToast={showToast} />}
           {activeTab === 'offerings' && <OfferingSelector selectedUnits={offeredUnits} onUpdate={handleOfferingsUpdate} showToast={showToast} />}
         </div>

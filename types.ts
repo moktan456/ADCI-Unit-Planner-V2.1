@@ -65,6 +65,7 @@ export interface ProcessedData {
   students: StudentProfile[];
   plans: StudentPlan[];
   unitDemand: UnitDemand[];
+  unitDemandFuture: UnitDemand[];
   stats: {
     totalAllocations: number;
     totalStudents: number;

@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "description": "ADCI Unit Planner 2.1",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --experimental-strip-types server.ts",
     "build": "vite build",
     "dev": "tsx server.ts",
     "ingest": "node scripts/ingest.js"

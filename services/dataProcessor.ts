@@ -290,6 +290,7 @@ export const generatePredictions = (
 ): ProcessedData => {
   const plans: StudentPlan[] = [];
   const unitDemandMap = new Map<string, number>();
+  const unitDemandFutureMap = new Map<string, number>();
   let atRiskCount = 0;
 
   const EXCLUDED_STATUSES = ["Cancelled", "Exit Course", "Visa Refusal", "Withdrawn"];
@@ -317,6 +318,7 @@ export const generatePredictions = (
     while(loopLimit < 20) {
       loopLimit++;
       const isNextSem = termCounter === 1;
+      const isFutureSem2 = termCounter === 2;
       const termLabel = isNextSem ? "Next Semester" : `Following Semester ${termCounter - 1}`;
       
       let currentTerm: string[] = [];
@@ -401,6 +403,12 @@ export const generatePredictions = (
             unitDemandMap.set(u, (unitDemandMap.get(u) || 0) + 1);
           });
         }
+
+        if (isFutureSem2) {
+          currentTerm.forEach(u => {
+            unitDemandFutureMap.set(u, (unitDemandFutureMap.get(u) || 0) + 1);
+          });
+        }
       } else {
         if (isNextSem) break; 
         break;
@@ -418,19 +426,24 @@ export const generatePredictions = (
     }
   });
 
-  const unitDemand: UnitDemand[] = Array.from(unitDemandMap.entries()).map(([code, count]) => {
-    let uType: 'Cyber' | 'Data' | 'Common' = 'Common';
-    if (CYBER_ONLY_UNITS.has(code)) uType = 'Cyber';
-    if (DATA_ONLY_UNITS.has(code)) uType = 'Data';
+  const generateDemandList = (map: Map<string, number>) => {
+    return Array.from(map.entries()).map(([code, count]) => {
+      let uType: 'Cyber' | 'Data' | 'Common' = 'Common';
+      if (CYBER_ONLY_UNITS.has(code)) uType = 'Cyber';
+      if (DATA_ONLY_UNITS.has(code)) uType = 'Data';
 
-    return {
-        unitCode: code,
-        count,
-        isCommon: COMMON_UNITS.has(code),
-        unitType: uType,
-        semester: UNIT_SEMESTER_MAP[code] || 0
-    };
-  }).sort((a, b) => b.count - a.count);
+      return {
+          unitCode: code,
+          count,
+          isCommon: COMMON_UNITS.has(code),
+          unitType: uType,
+          semester: UNIT_SEMESTER_MAP[code] || 0
+      };
+    }).sort((a, b) => b.count - a.count);
+  };
+
+  const unitDemand = generateDemandList(unitDemandMap);
+  const unitDemandFuture = generateDemandList(unitDemandFutureMap);
 
   const totalEstimatedEnrollments = unitDemand.reduce((sum, item) => sum + item.count, 0);
   const currentStudentsCount = students.filter(s => s.status === "Current Student").length;
@@ -440,6 +453,7 @@ export const generatePredictions = (
     students,
     plans,
     unitDemand,
+    unitDemandFuture,
     stats: {
       totalAllocations: totalEstimatedEnrollments,
       totalStudents: currentStudentsCount,

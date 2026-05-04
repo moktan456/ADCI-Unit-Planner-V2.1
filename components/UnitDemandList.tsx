@@ -3,9 +3,14 @@ import { ProcessedData } from '../types';
 import { clsx } from 'clsx';
 import { Users, X, Search, GraduationCap } from 'lucide-react';
 
-const UnitDemandList: React.FC<{ data: ProcessedData }> = ({ data }) => {
+const UnitDemandList: React.FC<{ data: ProcessedData, isFuture?: boolean }> = ({ data, isFuture }) => {
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const [studentSearch, setStudentSearch] = useState('');
+
+  const termToFilter = isFuture ? "Following Semester 1" : "Next Semester";
+  const demandData = isFuture ? data.unitDemandFuture : data.unitDemand;
+  const title = isFuture ? "Unit Offering Demand (Future Sem 2)" : "Unit Offering Demand (Next Semester)";
+  const description = isFuture ? "Projected enrollment list for 'Following Semester 1'." : "Projected enrollment list for next semester.";
   
   const getTypeBadge = (type: 'Cyber' | 'Data' | 'Common') => {
     switch (type) {
@@ -31,8 +36,8 @@ const UnitDemandList: React.FC<{ data: ProcessedData }> = ({ data }) => {
 
     const students = data.plans
       .filter(p => {
-        const nextSem = p.plans.find(pl => pl.term === "Next Semester");
-        return nextSem?.units.includes(selectedUnit);
+        const targetSem = p.plans.find(pl => pl.term === termToFilter);
+        return targetSem?.units.includes(selectedUnit);
       })
       .map(p => {
         const profile = data.students.find(s => s.id === p.studentId);
@@ -49,13 +54,13 @@ const UnitDemandList: React.FC<{ data: ProcessedData }> = ({ data }) => {
       s.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
       s.id.toLowerCase().includes(studentSearch.toLowerCase())
     );
-  }, [selectedUnit, data, studentSearch]);
+  }, [selectedUnit, data, studentSearch, termToFilter]);
 
   return (
     <>
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col h-[calc(100vh-200px)] animate-fade-in">
         <div className="p-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Unit Offering Demand (Next Semester)</h2>
+          <h2 className="text-lg font-bold text-slate-800">{title}</h2>
           <p className="text-sm text-slate-500">Click on any row to view the list of enrolled students.</p>
         </div>
         
@@ -71,7 +76,7 @@ const UnitDemandList: React.FC<{ data: ProcessedData }> = ({ data }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {data.unitDemand.map((item) => (
+              {demandData.map((item) => (
                 <tr 
                   key={item.unitCode} 
                   onClick={() => { setSelectedUnit(item.unitCode); setStudentSearch(''); }}
@@ -112,7 +117,7 @@ const UnitDemandList: React.FC<{ data: ProcessedData }> = ({ data }) => {
                     {enrolledStudents.length} Students
                   </span>
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">Projected enrollment list for next semester.</p>
+                <p className="text-sm text-slate-500 mt-1">{description}</p>
               </div>
               <button 
                 onClick={() => setSelectedUnit(null)}
