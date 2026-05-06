@@ -153,9 +153,14 @@ function App() {
         emailVerified: true
       } as any;
       
+      const sessionData = {
+        user: mockUser,
+        expiry: Date.now() + (8 * 60 * 60 * 1000) // 8 hours from now
+      };
+      
       setUser(mockUser);
-      // Persist locally since we removed Firebase Auth
-      localStorage.setItem('adci_auth_session', JSON.stringify(mockUser));
+      // Persist locally with expiry timestamp
+      localStorage.setItem('adci_auth_session', JSON.stringify(sessionData));
       showToast("Logged in as Admin", "success");
       return true;
     }
@@ -170,11 +175,23 @@ function App() {
     showToast("Logged out", "info");
   };
 
-  // Auth Listener (Simplified for local session)
+  // Auth Listener (Simplified for local session with expiry check)
   useEffect(() => {
     const savedSession = localStorage.getItem('adci_auth_session');
     if (savedSession) {
-      setUser(JSON.parse(savedSession));
+      try {
+        const sessionData = JSON.parse(savedSession);
+        // Check if session has expired
+        if (sessionData.expiry && Date.now() < sessionData.expiry) {
+          setUser(sessionData.user);
+        } else {
+          // Session expired
+          localStorage.removeItem('adci_auth_session');
+          showToast("Session expired. Please log in again.", "info");
+        }
+      } catch (e) {
+        localStorage.removeItem('adci_auth_session');
+      }
     }
     setIsAuthReady(true);
   }, []);
