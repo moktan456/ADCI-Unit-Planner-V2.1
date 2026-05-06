@@ -7,9 +7,10 @@ import * as XLSX from 'xlsx';
 
 interface StudyPlanListProps {
   data: ProcessedData;
+  showToast?: (message: string, type?: 'success' | 'info' | 'error') => void;
 }
 
-const StudyPlanList: React.FC<StudyPlanListProps> = ({ data }) => {
+const StudyPlanList: React.FC<StudyPlanListProps> = ({ data, showToast }) => {
   const [search, setSearch] = useState('');
 
   const filteredPlans = useMemo(() => {
@@ -36,27 +37,29 @@ const StudyPlanList: React.FC<StudyPlanListProps> = ({ data }) => {
 
   const exportToExcel = () => {
     const exportData = filteredPlans.map(row => {
-      const stream = getStudentStream(row.studentId);
-      const rowData: Record<string, string | number> = {
-        "Student ID": row.studentId, "Student Name": row.studentName, "Stream": stream,
-      };
-      row.plans.forEach((termPlan, idx) => {
-        const termLabel = idx === 0 ? "Next Semester" : `Sem ${idx + 1}`;
-        rowData[termLabel] = termPlan.units.join(", ");
-      });
+      const student = data.students.find(s => s.id === row.studentId);
+      const stream = student?.stream || 'Combined';
       const failedUnits = student ? Object.values(student.units).filter(u => u.status === 'Failed').map(u => u.unitCode).join(", ") : "";
-      return {
+      
+      const rowData: Record<string, string | number> = {
         "Student ID": row.studentId,
         "Student Name": row.studentName,
         "Stream": stream,
         "Backlog / Failed": failedUnits,
-        ...rowData
       };
+
+      row.plans.forEach((termPlan, idx) => {
+        const termLabel = idx === 0 ? "Next Semester" : `Future Sem ${idx + 1}`;
+        rowData[termLabel] = termPlan.units.join(", ");
+      });
+
+      return rowData;
     });
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Full Degree Roadmap");
     XLSX.writeFile(wb, "Student_Degree_Roadmaps.xlsx");
+    if (showToast) showToast("Degree roadmap exported to Excel", "success");
   };
 
   return (

@@ -8,9 +8,10 @@ import * as XLSX from 'xlsx';
 interface FailureAnalysisProps {
   data: ProcessedData;
   onSelectStudent: (student: StudentProfile) => void;
+  showToast?: (message: string, type?: 'success' | 'info' | 'error') => void;
 }
 
-const FailureAnalysis: React.FC<FailureAnalysisProps> = ({ data, onSelectStudent }) => {
+const FailureAnalysis: React.FC<FailureAnalysisProps> = ({ data, onSelectStudent, showToast }) => {
   const [search, setSearch] = useState('');
   const [unitFilter, setUnitFilter] = useState('All');
   const [intakeFilter, setIntakeFilter] = useState('All');
@@ -80,6 +81,7 @@ const FailureAnalysis: React.FC<FailureAnalysisProps> = ({ data, onSelectStudent
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Failure Analysis");
     XLSX.writeFile(wb, "ADCI_Failure_Analysis.xlsx");
+    if (showToast) showToast("Failure analysis report exported to Excel", "success");
   };
 
   return (

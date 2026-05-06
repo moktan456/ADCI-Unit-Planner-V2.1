@@ -10,9 +10,10 @@ interface StudentTrackerProps {
   data: ProcessedData;
   onSelectStudent: (student: StudentProfile) => void;
   streamFilter: 'Combined' | 'Cyber' | 'Data';
+  showToast?: (message: string, type?: 'success' | 'info' | 'error') => void;
 }
 
-const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, streamFilter }) => {
+const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, streamFilter, showToast }) => {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('Current Student');
   const [filterIntake, setFilterIntake] = useState('All');
@@ -151,6 +152,7 @@ const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Student Tracker");
     XLSX.writeFile(wb, "Student_Tracker_Export.xlsx");
+    if (showToast) showToast("Student list exported to Excel", "success");
   };
 
   return (

@@ -515,9 +515,9 @@ function App() {
         </header>
         <div className="flex-1 overflow-auto p-8 relative">
           {activeTab === 'dashboard' && <Dashboard data={data} />}
-          {activeTab === 'tracker' && <StudentTracker data={data} onSelectStudent={setSelectedStudent} streamFilter={streamFilter} />}
-          {activeTab === 'failures' && <FailureAnalysis data={data} onSelectStudent={setSelectedStudent} />}
-          {activeTab === 'plans' && <StudyPlanList data={data} />}
+          {activeTab === 'tracker' && <StudentTracker data={data} onSelectStudent={setSelectedStudent} streamFilter={streamFilter} showToast={showToast} />}
+          {activeTab === 'failures' && <FailureAnalysis data={data} onSelectStudent={setSelectedStudent} showToast={showToast} />}
+          {activeTab === 'plans' && <StudyPlanList data={data} showToast={showToast} />}
           {activeTab === 'demand' && <UnitDemandList data={data} />}
           {activeTab === 'demand2' && <UnitDemandList data={data} isFuture={true} />}
           {activeTab === 'timetable' && <TimetableScheduler data={data} showToast={showToast} />}
