@@ -4,6 +4,7 @@ import { Search, Filter, ChevronDown, ArrowUpDown, Calendar, Download } from 'lu
 import { ProcessedData, StudentProfile } from '../types';
 import { clsx } from 'clsx';
 import { MASTER_UNIT_ORDER, CYBER_ONLY_UNITS, DATA_ONLY_UNITS } from '../constants';
+import { getStudentYearSem } from '../services/dataProcessor';
 import * as XLSX from 'xlsx';
 
 interface StudentTrackerProps {
@@ -140,7 +141,12 @@ const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, 
   const handleExportList = () => {
     const exportData = filteredStudents.map(s => {
       const row: Record<string, string | number> = {
-        'Student ID': s.id, 'Name': s.name, 'Intake': s.intake, 'Status': s.status, 'Stream': s.stream
+        'Student ID': s.id, 
+        'Name': s.name, 
+        'Intake': s.intake, 
+        'Status': s.status,
+        'Year/Sem': getStudentYearSem(s),
+        'Stream': s.stream
       };
       visibleUnits.forEach(unit => {
         const u = s.units[unit];
@@ -198,6 +204,7 @@ const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, 
               
               <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-48 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-200" onClick={() => handleSort('intake')}>Intake</th>
               <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-48 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-200" onClick={() => handleSort('status')}>Status</th>
+              <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-32 border-b border-r border-slate-200">Year/Sem</th>
               <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-200 text-center" onClick={() => handleSort('progressPercent')}>Progress</th>
               
               {visibleUnits.map(unit => (
@@ -227,6 +234,11 @@ const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, 
                 <td className="p-4 border-r border-slate-100">
                     <span className={clsx("px-2 py-1 rounded text-xs font-medium border whitespace-nowrap block w-fit", getStudentStatusStyle(student.status))}>
                         {student.status}
+                    </span>
+                </td>
+                <td className="p-4 border-r border-slate-100">
+                    <span className="text-xs font-bold text-slate-600 whitespace-nowrap">
+                        {getStudentYearSem(student)}
                     </span>
                 </td>
                 <td className="p-4 border-r border-slate-100 text-center">

@@ -24,6 +24,7 @@ export interface PrerequisiteRule {
   requiredUnits?: string[]; // List of specific unit codes needed
   minCreditPoints?: number; // Accumulated CP required before taking this unit
   description?: string;
+  year?: number; // Academic year (1, 2, or 3)
 }
 
 export interface StudentProfile {
@@ -87,6 +88,7 @@ export interface WorkspaceState {
   offeredUnits: string[];
   timetable: TimetableState;
   prerequisiteRules?: PrerequisiteRule[];
+  prerequisiteFileName?: string;
   manualOverrides?: Record<string, Record<string, string[]>>; // studentId -> term -> unitCodes
   exportedAt: string;
   version: string;

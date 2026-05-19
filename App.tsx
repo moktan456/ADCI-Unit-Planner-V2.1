@@ -35,6 +35,7 @@ function App() {
   const [rawStudents, setRawStudents] = useState<StudentProfile[] | null>(null);
   const [offeredUnits, setOfferedUnits] = useState<Set<string>>(new Set(DEFAULT_OFFERED_UNITS));
   const [prerequisiteRules, setPrerequisiteRules] = useState<PrerequisiteRule[]>([]);
+  const [prerequisiteFileName, setPrerequisiteFileName] = useState<string | null>(null);
   const [manualOverrides, setManualOverrides] = useState<Record<string, Record<string, string[]>>>({});
 
   const [streamFilter, setStreamFilter] = useState<StreamFilter>('Combined');
@@ -75,6 +76,7 @@ function App() {
               rooms: timetableRooms
           },
           prerequisiteRules: rules || prerequisiteRules,
+          prerequisiteFileName: prerequisiteFileName || undefined,
           manualOverrides: overrides || manualOverrides,
           exportedAt: new Date().toISOString(),
           version: '1.0'
@@ -88,6 +90,7 @@ function App() {
       const loadedOfferings = new Set(workspace.offeredUnits);
       setOfferedUnits(loadedOfferings);
       setPrerequisiteRules(workspace.prerequisiteRules || []);
+      setPrerequisiteFileName(workspace.prerequisiteFileName || null);
       setManualOverrides(workspace.manualOverrides || {});
       
       // Update local storage for redundancy
@@ -267,6 +270,7 @@ function App() {
     try {
       const rules = await parsePrerequisiteData(file);
       setPrerequisiteRules(rules);
+      setPrerequisiteFileName(file.name);
       
       if (rawStudents) {
         const processed = generatePredictions(rawStudents, offeredUnits, rules, manualOverrides);
@@ -395,8 +399,8 @@ function App() {
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-2xl hover:border-primary hover:bg-slate-50 transition-all cursor-pointer group-hover:bg-slate-50">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Plus className="w-8 h-8 text-slate-400 mb-2" />
-                    <p className="text-sm text-slate-500 font-medium">
-                      {prerequisiteRules.length > 0 ? `${prerequisiteRules.length} Rules Loaded` : 'Prerequisite File'}
+                    <p className="text-sm text-slate-500 font-medium truncate max-w-[200px] px-2">
+                      {prerequisiteFileName || (prerequisiteRules.length > 0 ? `${prerequisiteRules.length} Rules Loaded` : 'Prerequisite File')}
                     </p>
                   </div>
                   <input type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={handlePrerequisiteProcess} />
@@ -406,7 +410,7 @@ function App() {
                   onClick={downloadPrerequisiteTemplate}
                   className="w-full py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
                 >
-                  <DownloadCloud className="w-4 h-4" /> Download Template
+                  <DownloadCloud className="w-4 h-4" /> Prerequisite Template
                 </button>
               </div>
               

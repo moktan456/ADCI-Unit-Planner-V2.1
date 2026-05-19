@@ -30,26 +30,36 @@ export const parsePrerequisiteData = async (file: File): Promise<PrerequisiteRul
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
   const data = XLSX.utils.sheet_to_json<any>(worksheet);
 
-  return data.map(row => ({
-    unitCode: String(row.UnitCode || row.unitCode || row.Unit || row.Code || "").trim().toUpperCase(),
-    requiredUnits: String(row.Prerequisites || row.prerequisites || "").split(/[,;|]+/).map(u => u.trim().toUpperCase()).filter(u => u),
-    minCreditPoints: Number(row.CreditPoints || row.creditPoints || row.MinCP || 0),
-    description: row.Description || row.description || ""
-  })).filter(r => r.unitCode);
+  return data.map(row => {
+    const rawYear = String(row.Year || row.year || "");
+    let year: number | undefined;
+    if (rawYear.toLowerCase().includes("one") || rawYear.includes("1")) year = 1;
+    else if (rawYear.toLowerCase().includes("two") || rawYear.includes("2")) year = 2;
+    else if (rawYear.toLowerCase().includes("three") || rawYear.includes("3")) year = 3;
+
+    return {
+      unitCode: String(row.UnitCode || row.unitCode || row.Unit || row.Code || "").trim().toUpperCase(),
+      requiredUnits: String(row.Prerequisites || row.prerequisites || "").split(/[,;|]+/).map(u => u.trim().toUpperCase()).filter(u => u),
+      minCreditPoints: Number(row.CreditPoints || row.creditPoints || row.MinCP || 0),
+      description: row.Description || row.description || "",
+      year
+    };
+  }).filter(r => r.unitCode);
 };
 
 export const downloadPrerequisiteTemplate = () => {
-    const headers = ["Year", "Unit Code", "Unit Name", "Pre-requisite", "Credit"];
+    const headers = ["Year", "Unit Code", "Unit Name", "Prerequisites", "Credit Points"];
     const sampleData = [
-        ["Year One", "CSC101", "Introduction to programming", "", "6"],
-        ["Year One", "ARI101", "Introduction to Artificial Intelligence", "CSC101", "6"],
-        ["Year Three", "ORG303", "Digital Innovation", "77 credit points", "6"],
+        ["Year 1", "CSC101", "Introduction to programming", "", "6"],
+        ["Year 1", "ARI101", "Introduction to Artificial Intelligence", "CSC101", "6"],
+        ["Year 2", "CSC203", "Object Oriented Programming", "CSC101", "6"],
+        ["Year 3", "CAP301", "Capstone Project 1", "77 credit points", "6"],
     ];
     
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
-    XLSX.utils.book_append_sheet(wb, ws, "Prerequisites");
-    XLSX.writeFile(wb, "ADCI_Prerequisites_Template.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Prerequisite Template");
+    XLSX.writeFile(wb, "Prerequisite_Template.xlsx");
 };
 
 const parseUnits = (cellText: string): { unit: string; grade: string }[] => {
@@ -154,7 +164,34 @@ const canTakeUnit = (
   return true;
 };
 
-const sortUnits = (a: string, b: string) => {
+const getUnitYearLevel = (unitCode: string, ruleYear?: number): number => {
+  if (ruleYear) return ruleYear;
+  // Year level = first digit of the numeric suffix (e.g., UNIT102 -> 1)
+  const match = unitCode.match(/\d/);
+  if (match) return parseInt(match[0]);
+  
+  // Fallback to constants mapping if regex fails
+  if (YEAR_1_POOL.has(unitCode)) return 1;
+  const isData = DATA_ONLY_UNITS.has(unitCode);
+  if (isData) {
+    if (YEAR_2_DATA_POOL.has(unitCode)) return 2;
+  } else {
+    if (YEAR_2_CYBER_POOL.has(unitCode)) return 2;
+  }
+  if (YEAR_3_UNITS.has(unitCode)) return 3;
+  
+  return 9; 
+};
+
+const sortUnits = (a: string, b: string, prerequisiteRules?: PrerequisiteRule[]) => {
+  const ruleA = prerequisiteRules?.find(r => r.unitCode === a);
+  const ruleB = prerequisiteRules?.find(r => r.unitCode === b);
+  
+  const yearA = getUnitYearLevel(a, ruleA?.year);
+  const yearB = getUnitYearLevel(b, ruleB?.year);
+  
+  if (yearA !== yearB) return yearA - yearB;
+
   const semA = UNIT_SEMESTER_MAP[a] || 99.9;
   const semB = UNIT_SEMESTER_MAP[b] || 99.9;
   if (semA !== semB) return semA - semB;
@@ -166,6 +203,18 @@ const sortUnits = (a: string, b: string) => {
   const idxA = MASTER_UNIT_ORDER.indexOf(a);
   const idxB = MASTER_UNIT_ORDER.indexOf(b);
   return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+};
+
+export const getStudentYearSem = (student: StudentProfile): string => {
+  const completedCount = Object.values(student.units).filter(u => 
+    u.status === "Completed" || u.status === "CreditTransfer"
+  ).length;
+  
+  const year = Math.floor(completedCount / 8) + 1;
+  const sem = (Math.floor(completedCount / 4) % 2) + 1;
+  
+  if (year > 3) return "Completed";
+  return `Year ${year}/Sem ${sem}`;
 };
 
 export const parseStudentData = async (file: File): Promise<StudentProfile[]> => {
@@ -326,6 +375,13 @@ export const generatePredictions = (
       if (manualOverrides?.[student.id]?.[termLabel]) {
         currentTerm = manualOverrides[student.id][termLabel];
       } else {
+        // Determine student year level based on units simulated as completed
+        // Every 8 units roughly equals one academic year level
+        const currentProgress = simDone.size;
+        // If they have 0-7 units, they are in Year 1 planning for Year 1 or 2
+        // If they have 8-15 units, they are in Year 2 planning for Year 2 or 3
+        const studentYear = Math.floor((currentProgress) / 8) + 1;
+
         let candidates = MASTER_UNIT_ORDER.filter(u => !simDone.has(u));
         
         if (student.stream === 'Cyber') {
@@ -337,55 +393,29 @@ export const generatePredictions = (
       if (candidates.length === 0) break;
 
       const eligibleUnits = candidates.filter(u => {
-        // Updated Logic: Use the Year 2 Gate check
+        // Prerequisite check
         if (!canTakeUnit(u, simDone, student.stream, prerequisiteRules)) return false;
         
+        // Year-wise constraint Logic: By default upcoming years' unit should not be provided in current year.
+        const rule = prerequisiteRules?.find(r => r.unitCode === u);
+        const unitYear = getUnitYearLevel(u, rule?.year);
+
+        // Prevents future year units, but allows previous year units (backlog)
+        if (unitYear > studentYear) return false;
+
         if (isNextSem) {
           if (!offeredUnits.has(u)) return false;
         }
         return true;
       });
 
-      eligibleUnits.sort(sortUnits);
+      // Sort by Year Level first (as requested), then use the standard semester-based fallback
+      eligibleUnits.sort((a, b) => sortUnits(a, b, prerequisiteRules));
 
-      // Flexibility Logic: Allow mixing backlog units with next semester units
-      // Instead of just taking the first 4 (which would be all backlog), 
-      // we take a mix if possible.
-      
+      // Simplified selection logic: SELECT top unit(s) from sorted list (up to 4)
+      // This automatically gives priority to lower level units (Year 1 > Year 2 > Year 3)
       if (eligibleUnits.length > 0) {
-        const unitsBySemester: Record<number, string[]> = {};
-        eligibleUnits.forEach(u => {
-          const sem = UNIT_SEMESTER_MAP[u] || 99;
-          if (!unitsBySemester[sem]) unitsBySemester[sem] = [];
-          unitsBySemester[sem].push(u);
-        });
-
-        const sortedSemesters = Object.keys(unitsBySemester).map(Number).sort((a, b) => a - b);
-        
-        if (sortedSemesters.length > 0) {
-          const earliestSem = sortedSemesters[0];
-          const nextSem = sortedSemesters.find(s => s > earliestSem);
-
-          // Take up to 2 from earliest (backlog)
-          const fromEarliest = unitsBySemester[earliestSem].slice(0, 2);
-          currentTerm.push(...fromEarliest);
-
-          if (nextSem !== undefined) {
-            // Take up to 2 from next semester to allow progression
-            const fromNext = unitsBySemester[nextSem].slice(0, 2);
-            currentTerm.push(...fromNext);
-          }
-
-          // Fill remaining slots (up to 4) from the remaining eligible units in order
-          const alreadyPicked = new Set(currentTerm);
-          for (const u of eligibleUnits) {
-            if (currentTerm.length >= 4) break;
-            if (!alreadyPicked.has(u)) {
-              currentTerm.push(u);
-              alreadyPicked.add(u);
-            }
-          }
-        }
+        currentTerm = eligibleUnits.slice(0, 4);
       }
     }
 
