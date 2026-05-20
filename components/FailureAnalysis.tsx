@@ -181,12 +181,7 @@ const FailureAnalysis: React.FC<FailureAnalysisProps> = ({ data, onSelectStudent
                   <td className="p-4">
                     <div className="flex flex-col">
                       <span className="font-bold text-slate-900">{student.name}</span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-mono text-slate-500">{student.id}</span>
-                        <span className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100 font-medium font-sans">
-                          {student.yearSemLabel}
-                        </span>
-                      </div>
+                      <span className="text-xs font-mono text-slate-500">{student.id}</span>
                     </div>
                   </td>
                   <td className="p-4">

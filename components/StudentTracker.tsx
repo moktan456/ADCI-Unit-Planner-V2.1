@@ -131,6 +131,14 @@ const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, 
     return 'bg-slate-100 text-slate-600 border-slate-200';
   };
 
+  const getYearSemStyle = (yearSem: string | undefined) => {
+    const val = yearSem || 'Year 1/Sem 1';
+    if (val.includes('Year 1')) return 'bg-teal-50 text-teal-700 border-teal-200';
+    if (val.includes('Year 2')) return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (val.includes('Year 3')) return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+    return 'bg-slate-50 text-slate-600 border-slate-200';
+  };
+
   const isUnitIrrelevant = (student: StudentProfile, unitCode: string) => {
     if (student.stream === 'Cyber' && DATA_ONLY_UNITS.has(unitCode)) return true;
     if (student.stream === 'Data' && CYBER_ONLY_UNITS.has(unitCode)) return true;
@@ -140,12 +148,7 @@ const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, 
   const handleExportList = () => {
     const exportData = filteredStudents.map(s => {
       const row: Record<string, string | number> = {
-        'Student ID': s.id, 
-        'Name': s.name, 
-        'Intake': s.intake, 
-        'Status': s.status, 
-        'Year/Sem': s.yearSemLabel,
-        'Stream': s.stream
+        'Student ID': s.id, 'Name': s.name, 'Intake': s.intake, 'Status': s.status, 'Year & Sem': s.yearSem || 'Year 1/Sem 1', 'Stream': s.stream
       };
       visibleUnits.forEach(unit => {
         const u = s.units[unit];
@@ -203,7 +206,7 @@ const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, 
               
               <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-48 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-200" onClick={() => handleSort('intake')}>Intake</th>
               <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-48 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-200" onClick={() => handleSort('status')}>Status</th>
-              <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-36 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-200" onClick={() => handleSort('yearSemLabel')}>Current Year/Sem</th>
+              <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-36 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-200" onClick={() => handleSort('yearSem')}>Academic Progression</th>
               <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-200 text-center" onClick={() => handleSort('progressPercent')}>Progress</th>
               
               {visibleUnits.map(unit => (
@@ -235,9 +238,9 @@ const StudentTracker: React.FC<StudentTrackerProps> = ({ data, onSelectStudent, 
                         {student.status}
                     </span>
                 </td>
-                <td className="p-4 border-r border-slate-100 font-semibold text-slate-700 text-xs text-center">
-                    <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded border border-indigo-100 whitespace-nowrap font-medium">
-                        {student.yearSemLabel}
+                <td className="p-4 border-r border-slate-100">
+                    <span className={clsx("px-2.5 py-1 rounded text-xs font-semibold border whitespace-nowrap block w-fit shadow-xs", getYearSemStyle(student.yearSem))}>
+                        {student.yearSem || 'Year 1/Sem 1'}
                     </span>
                 </td>
                 <td className="p-4 border-r border-slate-100 text-center">

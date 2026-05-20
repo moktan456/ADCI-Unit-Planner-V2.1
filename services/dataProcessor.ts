@@ -219,10 +219,7 @@ export const parseStudentData = async (file: File): Promise<StudentProfile[]> =>
         progressPercent: 0,
         completedCount: 0,
         totalListedUnits: 0,
-        semestersRequired: 0,
-        currentYear: 1,
-        currentSem: 1,
-        yearSemLabel: 'Year 1/Sem 1'
+        semestersRequired: 0
       });
     }
 
@@ -288,18 +285,18 @@ export const parseStudentData = async (file: File): Promise<StudentProfile[]> =>
     s.totalListedUnits = allListedUnits.length;
     s.completedCount = completedOrCredited;
     s.progressPercent = s.totalListedUnits > 0 ? (s.completedCount / s.totalListedUnits) * 100 : 0;
-
-    const finishedCount = Object.values(s.units).filter(u => 
-      u.status === "Completed" || u.status === "CreditTransfer"
-    ).length;
-
-    const level = Math.floor(finishedCount / 4) + 1;
-    const computedYear = Math.floor((level - 1) / 2) + 1;
-    const computedSem = ((level - 1) % 2) + 1;
-
-    s.currentYear = Math.min(computedYear, 3);
-    s.currentSem = computedYear > 3 ? 2 : computedSem;
-    s.yearSemLabel = `Year ${s.currentYear}/Sem ${s.currentSem}`;
+    
+    let year = 1;
+    let sem = 1;
+    if (completedOrCredited >= 20) {
+      year = 3;
+      sem = 2;
+    } else {
+      year = Math.floor(completedOrCredited / 8) + 1;
+      const rem = completedOrCredited % 8;
+      sem = rem >= 4 ? 2 : 1;
+    }
+    s.yearSem = `Year ${year}/Sem ${sem}`;
     
     return s;
   });
@@ -355,7 +352,6 @@ export const generatePredictions = (
         // Every 8 units roughly equals one academic year level
         const currentProgress = simDone.size;
         const studentYear = Math.floor(currentProgress / 8) + 1;
-        const studentSem = ((Math.floor(currentProgress / 4)) % 2) + 1;
 
         let candidates = MASTER_UNIT_ORDER.filter(u => !simDone.has(u));
         
@@ -365,74 +361,72 @@ export const generatePredictions = (
             candidates = candidates.filter(u => !CYBER_ONLY_UNITS.has(u));
         }
       
-      if (candidates.length === 0) break;
+        if (candidates.length === 0) break;
 
-      const eligibleUnits = candidates.filter(u => {
-        // Prerequisite check
-        if (!canTakeUnit(u, simDone, student.stream, prerequisiteRules)) return false;
-        
-        // Year-wise constraint Logic
-        // By default upcoming years' unit should not be provided in current year.
-        const rule = prerequisiteRules?.find(r => r.unitCode === u);
-        const unitYearAndSem = UNIT_SEMESTER_MAP[u] || 1.1;
-        const unitYear = rule?.year || Math.floor(unitYearAndSem);
-        const unitSem = Math.round((unitYearAndSem - Math.floor(unitYearAndSem)) * 10);
+        const getUnitYear = (u: string) => {
+          const rule = prerequisiteRules?.find(r => r.unitCode === u);
+          return rule?.year || Math.floor(UNIT_SEMESTER_MAP[u] || 0);
+        };
 
-        // Prevents future year units, but allows previous year units (backlog)
-        if (unitYear > studentYear) return false;
-
-        // Decides unit selection based on both current Year and Semester
-        // Prevents future semester units of the current year (e.g. Year 2/Sem 2 units in Year 2/Sem 1)
-        if (unitYear === studentYear && unitSem > studentSem) return false;
-
-        if (isNextSem) {
-          if (!offeredUnits.has(u)) return false;
-        }
-        return true;
-      });
-
-      eligibleUnits.sort(sortUnits);
-
-      // Flexibility Logic: Allow mixing backlog units with next semester units
-      // Instead of just taking the first 4 (which would be all backlog), 
-      // we take a mix if possible.
-      
-      if (eligibleUnits.length > 0) {
-        const unitsBySemester: Record<number, string[]> = {};
-        eligibleUnits.forEach(u => {
-          const sem = UNIT_SEMESTER_MAP[u] || 99;
-          if (!unitsBySemester[sem]) unitsBySemester[sem] = [];
-          unitsBySemester[sem].push(u);
+        const validCandidates = candidates.filter(u => {
+          if (!canTakeUnit(u, simDone, student.stream, prerequisiteRules)) return false;
+          if (isNextSem && !offeredUnits.has(u)) return false;
+          return true;
         });
 
-        const sortedSemesters = Object.keys(unitsBySemester).map(Number).sort((a, b) => a - b);
-        
-        if (sortedSemesters.length > 0) {
-          const earliestSem = sortedSemesters[0];
-          const nextSem = sortedSemesters.find(s => s > earliestSem);
+        // Group into regular (current year or backlog) and pull-forward (future years)
+        const regularEligible = validCandidates.filter(u => getUnitYear(u) <= studentYear);
+        const pullForwardEligible = validCandidates.filter(u => getUnitYear(u) > studentYear);
 
-          // Take up to 2 from earliest (backlog)
-          const fromEarliest = unitsBySemester[earliestSem].slice(0, 2);
-          currentTerm.push(...fromEarliest);
+        regularEligible.sort(sortUnits);
+        pullForwardEligible.sort(sortUnits);
 
-          if (nextSem !== undefined) {
-            // Take up to 2 from next semester to allow progression
-            const fromNext = unitsBySemester[nextSem].slice(0, 2);
-            currentTerm.push(...fromNext);
+        const eligibleUnits = [...regularEligible];
+        // If there are fewer than 4 eligible units in the current year level and backlog, 
+        // pull forward eligible future-year units to ensure we meet the minimum of 4 units per semester.
+        if (eligibleUnits.length < 4) {
+          for (const u of pullForwardEligible) {
+            if (eligibleUnits.length >= 4) break;
+            eligibleUnits.push(u);
           }
+        }
 
-          // Fill remaining slots (up to 4) from the remaining eligible units in order
-          const alreadyPicked = new Set(currentTerm);
-          for (const u of eligibleUnits) {
-            if (currentTerm.length >= 4) break;
-            if (!alreadyPicked.has(u)) {
-              currentTerm.push(u);
-              alreadyPicked.add(u);
+        if (eligibleUnits.length > 0) {
+          const unitsBySemester: Record<number, string[]> = {};
+          eligibleUnits.forEach(u => {
+            const sem = UNIT_SEMESTER_MAP[u] || 99;
+            if (!unitsBySemester[sem]) unitsBySemester[sem] = [];
+            unitsBySemester[sem].push(u);
+          });
+
+          const sortedSemesters = Object.keys(unitsBySemester).map(Number).sort((a, b) => a - b);
+          
+          if (sortedSemesters.length > 0) {
+            const earliestSem = sortedSemesters[0];
+            const nextSem = sortedSemesters.find(s => s > earliestSem);
+
+            // Take up to 2 from earliest (backlog)
+            const fromEarliest = unitsBySemester[earliestSem].slice(0, 2);
+            currentTerm.push(...fromEarliest);
+
+            if (nextSem !== undefined) {
+              // Take up to 2 from next semester to allow progression
+              const fromNext = unitsBySemester[nextSem].slice(0, 2);
+              currentTerm.push(...fromNext);
+            }
+
+            // Fill remaining slots (up to 4) from the remaining eligible units in order
+            const alreadyPicked = new Set(currentTerm);
+            for (const u of eligibleUnits) {
+              if (currentTerm.length >= 4) break;
+              if (!alreadyPicked.has(u)) {
+                currentTerm.push(u);
+                alreadyPicked.add(u);
+              }
             }
           }
         }
       }
-    }
 
     if (currentTerm.length > 0) {
       studentPlansItems.push({

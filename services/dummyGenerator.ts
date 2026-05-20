@@ -82,6 +82,18 @@ export const generateDummyStudents = (count: number = 50): StudentProfile[] => {
     student.completedCount = completed;
     student.progressPercent = allListed.length > 0 ? (completed / allListed.length) * 100 : 0;
 
+    let year = 1;
+    let sem = 1;
+    if (completed >= 20) {
+      year = 3;
+      sem = 2;
+    } else {
+      year = Math.floor(completed / 8) + 1;
+      const rem = completed % 8;
+      sem = rem >= 4 ? 2 : 1;
+    }
+    student.yearSem = `Year ${year}/Sem ${sem}`;
+
     students.push(student);
   }
 

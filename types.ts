@@ -40,9 +40,7 @@ export interface StudentProfile {
   completedCount: number;
   totalListedUnits: number;
   semestersRequired: number;
-  currentYear: number;
-  currentSem: number;
-  yearSemLabel: string;
+  yearSem?: string;
 }
 
 export interface StudyPlanItem {
