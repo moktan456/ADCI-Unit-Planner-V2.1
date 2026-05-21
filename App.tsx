@@ -123,14 +123,19 @@ function App() {
       }
   };
 
-  const saveToServer = async (studentsOverride?: StudentProfile[], offeringsOverride?: Set<string>) => {
+  const saveToServer = async (
+    studentsOverride?: StudentProfile[], 
+    offeringsOverride?: Set<string>,
+    rulesOverride?: PrerequisiteRule[],
+    overridesOverride?: Record<string, Record<string, string[]>>
+  ) => {
       const studentsToSave = studentsOverride || rawStudents;
       const offeringsToSave = offeringsOverride || offeredUnits;
       
       if (!studentsToSave) return;
       
       setIsLoading(true);
-      const currentState = getCurrentState(studentsToSave, offeringsToSave);
+      const currentState = getCurrentState(studentsToSave, offeringsToSave, rulesOverride, overridesOverride);
       
       try {
         const result = await apiService.save(currentState);
