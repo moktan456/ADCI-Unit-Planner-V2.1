@@ -541,7 +541,7 @@ function App() {
           {activeTab === 'plans' && <StudyPlanList data={data} showToast={showToast} />}
           {activeTab === 'demand' && <UnitDemandList data={data} />}
           {activeTab === 'demand2' && <UnitDemandList data={data} isFuture={true} />}
-          {activeTab === 'timetable' && <TimetableScheduler data={data} showToast={showToast} />}
+          {activeTab === 'timetable' && <TimetableScheduler data={data} showToast={showToast} onSave={() => saveToServer()} isSaving={isLoading} />}
           {activeTab === 'offerings' && <OfferingSelector selectedUnits={offeredUnits} onUpdate={handleOfferingsUpdate} showToast={showToast} />}
         </div>
       </main>

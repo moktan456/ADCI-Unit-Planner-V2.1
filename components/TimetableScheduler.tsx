@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Clock, AlertCircle, User, Plus, X, Trash2, Calendar, Check, AlertTriangle, MapPin, Download } from 'lucide-react';
+import { Clock, AlertCircle, User, Plus, X, Trash2, Calendar, Check, AlertTriangle, MapPin, Download, Save } from 'lucide-react';
 import { ProcessedData } from '../types';
 import { clsx } from 'clsx';
 import * as XLSX from 'xlsx';
@@ -8,6 +8,8 @@ import * as XLSX from 'xlsx';
 interface TimetableSchedulerProps {
   data: ProcessedData;
   showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
+  onSave?: () => void;
+  isSaving?: boolean;
 }
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -103,38 +105,65 @@ const UnitCard: React.FC<UnitCardProps> = ({ code, sourceId, demand, unitType, a
   );
 };
 
-const TimetableScheduler: React.FC<TimetableSchedulerProps> = ({ data, showToast }) => {
-  const [schedule, setSchedule] = useState<Record<string, string>>({});
-  const [teacherAssignments, setTeacherAssignments] = useState<Record<string, string>>({});
+const TimetableScheduler: React.FC<TimetableSchedulerProps> = ({ data, showToast, onSave, isSaving }) => {
+  const [schedule, setSchedule] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('adci_timetable_schedule');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (e) { console.error(e); }
+    }
+    return {};
+  });
+  const [teacherAssignments, setTeacherAssignments] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('adci_timetable_assignments');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (e) { console.error(e); }
+    }
+    return {};
+  });
   const [unassignedUnits, setUnassignedUnits] = useState<string[]>([]);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [rooms, setRooms] = useState<string[]>(['Room 1', 'Room 2']);
+  const [teachers, setTeachers] = useState<Teacher[]>(() => {
+    const saved = localStorage.getItem('adci_timetable_teachers');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) { console.error(e); }
+    }
+    return [];
+  });
+  const [rooms, setRooms] = useState<string[]>(() => {
+    const saved = localStorage.getItem('adci_timetable_rooms');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) { console.error(e); }
+    }
+    return ['Room 1', 'Room 2'];
+  });
   const [newTeacherName, setNewTeacherName] = useState('');
   const [newRoomName, setNewRoomName] = useState('');
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedTeachers = localStorage.getItem('adci_timetable_teachers');
-    const savedAssignments = localStorage.getItem('adci_timetable_assignments');
-    const savedRooms = localStorage.getItem('adci_timetable_rooms');
-    if (savedTeachers) { try { setTeachers(JSON.parse(savedTeachers)); } catch (e) { console.error(e); } }
-    if (savedAssignments) { try { setTeacherAssignments(JSON.parse(savedAssignments)); } catch (e) { console.error(e); } }
-    if (savedRooms) { try { setRooms(JSON.parse(savedRooms)); } catch (e) { console.error(e); } }
-  }, []);
+    const assignedSet = new Set(Object.values(schedule));
+    const allDemand = data.unitDemand.map(u => u.unitCode);
+    const calculatedUnassigned = allDemand.filter(u => !assignedSet.has(u as string));
 
-  useEffect(() => {
-    const savedSchedule = localStorage.getItem('adci_timetable_schedule');
-    if (savedSchedule) {
-        try {
-            const parsedSchedule = JSON.parse(savedSchedule);
-            setSchedule(parsedSchedule);
-            const assignedSet = new Set(Object.values(parsedSchedule));
-            const allDemand = data.unitDemand.map(u => u.unitCode);
-            setUnassignedUnits(allDemand.filter(u => !assignedSet.has(u as string)));
-        } catch (e) { initAutoSchedule(); }
-    } else { initAutoSchedule(); }
-  }, [data.unitDemand]);
+    const saved = localStorage.getItem('adci_timetable_schedule');
+    if (!saved && Object.keys(schedule).length === 0) {
+      initAutoSchedule();
+    } else {
+      setUnassignedUnits(calculatedUnassigned);
+    }
+  }, [data.unitDemand, schedule]);
 
   useEffect(() => { localStorage.setItem('adci_timetable_schedule', JSON.stringify(schedule)); }, [schedule]);
   useEffect(() => { localStorage.setItem('adci_timetable_teachers', JSON.stringify(teachers)); }, [teachers]);
@@ -398,6 +427,16 @@ const TimetableScheduler: React.FC<TimetableSchedulerProps> = ({ data, showToast
              <button onClick={handleExportTimetable} className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-all shadow-sm">
                 <Download className="w-4 h-4" /> Export
              </button>
+             {onSave && (
+               <button 
+                 onClick={onSave} 
+                 disabled={isSaving}
+                 className="flex items-center gap-2 px-3 py-2 bg-indigo-600 border border-indigo-700 text-white hover:bg-indigo-700 disabled:bg-indigo-400 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+               >
+                 <Save className={clsx("w-4 h-4", isSaving && "animate-pulse")} /> 
+                 {isSaving ? 'Saving...' : 'Save to Cloud'}
+               </button>
+             )}
         </div>
       </div>
       <div className="flex gap-6 flex-1 overflow-hidden">
