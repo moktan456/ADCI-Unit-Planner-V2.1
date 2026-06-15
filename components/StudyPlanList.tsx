@@ -40,12 +40,14 @@ const StudyPlanList: React.FC<StudyPlanListProps> = ({ data, showToast }) => {
       const student = data.students.find(s => s.id === row.studentId);
       const stream = student?.stream || 'Combined';
       const failedUnits = student ? Object.values(student.units).filter(u => u.status === 'Failed').map(u => u.unitCode).join(", ") : "";
+      const enrolledUnits = student ? Object.values(student.units).filter(u => u.status === 'Enrolled').map(u => u.unitCode).join(", ") : "";
       
       const rowData: Record<string, string | number> = {
         "Student ID": row.studentId,
         "Student Name": row.studentName,
         "Stream": stream,
         "Backlog / Failed": failedUnits,
+        "Subject Enrolled": enrolledUnits,
       };
 
       row.plans.forEach((termPlan, idx) => {
@@ -74,6 +76,7 @@ const StudyPlanList: React.FC<StudyPlanListProps> = ({ data, showToast }) => {
             <tr>
               <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-64 bg-slate-50 border-b border-r border-slate-200 sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Student Profile</th>
               <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-r border-slate-200 min-w-[150px] text-center">Backlog / Failed</th>
+              <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-r border-slate-200 min-w-[150px] text-center">Subject Enrolled</th>
               {Array.from({ length: maxSemesters }).map((_, idx) => (
                 <th key={idx} className={clsx("p-4 text-xs font-bold uppercase tracking-wider border-b border-r border-slate-200 min-w-[200px] text-center", idx === 0 ? "bg-primary/5 sticky z-20" : "bg-slate-50")}>
                   <div className="flex items-center justify-center gap-2">
@@ -95,6 +98,7 @@ const StudyPlanList: React.FC<StudyPlanListProps> = ({ data, showToast }) => {
               const student = data.students.find(s => s.id === row.studentId);
               const stream = student?.stream || 'Combined';
               const failedUnits = student ? Object.values(student.units).filter(u => u.status === 'Failed') : [];
+              const enrolledUnits = student ? Object.values(student.units).filter(u => u.status === 'Enrolled') : [];
               
               return (
                 <tr key={row.studentId} className="hover:bg-slate-50 transition-colors">
@@ -113,6 +117,19 @@ const StudyPlanList: React.FC<StudyPlanListProps> = ({ data, showToast }) => {
                         ))
                       ) : (
                         <span className="text-slate-300 text-[10px] text-center italic py-2">No Backlog</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-3 border-r border-slate-100 align-top bg-amber-50/10">
+                    <div className="flex flex-col gap-1">
+                      {enrolledUnits.length > 0 ? (
+                        enrolledUnits.map(u => (
+                          <div key={u.unitCode} className="text-[10px] font-bold px-2 py-1 bg-amber-100 text-amber-700 border border-amber-200 rounded text-center font-mono">
+                            {u.unitCode}
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-slate-300 text-[10px] text-center italic py-2">None Enrolled</span>
                       )}
                     </div>
                   </td>

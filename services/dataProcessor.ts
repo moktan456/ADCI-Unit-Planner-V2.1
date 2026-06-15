@@ -315,15 +315,10 @@ export const generatePredictions = (
   const unitDemandFutureMap = new Map<string, number>();
   let atRiskCount = 0;
 
-  const EXCLUDED_STATUSES = ["Cancelled", "Exit Course", "Visa Refusal", "Withdrawn"];
-
   students.forEach(student => {
-    // Exclude specific inactive statuses as requested
-    const isExcluded = EXCLUDED_STATUSES.some(s => student.status.includes(s));
-    if (isExcluded) return;
-
-    // Only process students who are considered "Current" or active
-    if (!student.status.toLowerCase().includes("current")) return;
+    // Only process students whose status is exactly "Current Student" (case-insensitive and trimmed)
+    const normalizedStatus = (student.status || "").trim().toLowerCase();
+    if (normalizedStatus !== "current student") return;
 
     const doneOrEnrolled = new Set<string>();
     Object.values(student.units).forEach(u => {
@@ -485,8 +480,8 @@ export const generatePredictions = (
   const unitDemandFuture = generateDemandList(unitDemandFutureMap);
 
   const totalEstimatedEnrollments = unitDemand.reduce((sum, item) => sum + item.count, 0);
-  const currentStudentsCount = students.filter(s => s.status === "Current Student").length;
-  const graduatingSoonCount = students.filter(s => s.status === "Current Student" && s.progressPercent > 90).length;
+  const currentStudentsCount = students.filter(s => (s.status || "").trim().toLowerCase() === "current student").length;
+  const graduatingSoonCount = students.filter(s => (s.status || "").trim().toLowerCase() === "current student" && s.progressPercent > 90).length;
 
   return {
     students,

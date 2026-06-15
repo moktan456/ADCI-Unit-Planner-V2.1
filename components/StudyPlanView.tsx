@@ -69,20 +69,67 @@ const StudyPlanView: React.FC<StudyPlanViewProps> = ({ data, student, onClose, o
         <div className="flex-1 overflow-y-auto p-8">
           
           {student && (
-            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-xl">
-              <h4 className="text-sm font-bold text-red-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> Backlog / Failed Units
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {Object.values(student.units).filter(u => u.status === 'Failed').length > 0 ? (
-                  Object.values(student.units).filter(u => u.status === 'Failed').map(u => (
-                    <div key={u.unitCode} className="px-3 py-1.5 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold shadow-sm">
-                      {u.unitCode}
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-slate-400 text-sm italic">No failed units recorded.</span>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Completed Units */}
+              <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Completed / Credit Transfer
+                </h4>
+                <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto pr-1">
+                  {Object.values(student.units).filter(u => u.status === 'Completed' || u.status === 'CreditTransfer').length > 0 ? (
+                    Object.values(student.units).filter(u => u.status === 'Completed' || u.status === 'CreditTransfer').map(u => (
+                      <div key={u.unitCode} className="px-2.5 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-[11px] font-bold shadow-sm flex items-center gap-1.5 font-mono">
+                        <span>{u.unitCode}</span>
+                        {u.grade && (
+                          <span className="text-[9px] px-1 py-0.2 bg-emerald-100 text-emerald-800 rounded font-bold">
+                            {u.grade}
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-slate-400 text-xs italic py-2">No completed units.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Currently Enrolled */}
+              <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl">
+                <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  Currently Enrolled
+                </h4>
+                <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto pr-1">
+                  {Object.values(student.units).filter(u => u.status === 'Enrolled').length > 0 ? (
+                    Object.values(student.units).filter(u => u.status === 'Enrolled').map(u => (
+                      <div key={u.unitCode} className="px-2.5 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-[11px] font-bold shadow-sm font-mono">
+                        {u.unitCode}
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-slate-400 text-xs italic py-2">No units currently enrolled.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Backlog / Failed */}
+              <div className="p-4 bg-red-50/50 border border-red-100 rounded-xl">
+                <h4 className="text-xs font-bold text-red-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  Backlog / Failed
+                </h4>
+                <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto pr-1">
+                  {Object.values(student.units).filter(u => u.status === 'Failed').length > 0 ? (
+                    Object.values(student.units).filter(u => u.status === 'Failed').map(u => (
+                      <div key={u.unitCode} className="px-2.5 py-1.5 bg-white border border-red-200 text-red-700 rounded-lg text-[11px] font-bold shadow-sm font-mono">
+                        {u.unitCode}
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-slate-400 text-xs italic py-2">No backlog/failed units.</span>
+                  )}
+                </div>
               </div>
             </div>
           )}
